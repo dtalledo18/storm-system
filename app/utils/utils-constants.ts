@@ -1,4 +1,4 @@
-// utils/constants.ts - COMPLETO CON CONDADOS DEL FLOOD WARNING
+// utils/constants.ts - COMPLETO CON ZIP CODES
 
 import { County} from "@/app/types/types-alert";
 
@@ -32,7 +32,6 @@ export const COUNTY_COORDS: Record<string, County> = {
   '017179': { name: 'Washington County, IL', lat: 38.29, lng: -89.42, state: 'IL' },
   '017133': { name: 'Perry County, IL', lat: 38.04, lng: -88.94, state: 'IL' },
   '017201': { name: 'Williamson County, IL', lat: 37.72, lng: -88.84, state: 'IL' },
-  // NUEVOS PARA FLOOD WARNING
   '017059': { name: 'Gallatin County, IL', lat: 38.18, lng: -88.51, state: 'IL' },
   '017069': { name: 'Hardin County, IL', lat: 37.64, lng: -88.26, state: 'IL' },
 
@@ -63,7 +62,6 @@ export const COUNTY_COORDS: Record<string, County> = {
   '021151': { name: 'Marion County, KY', lat: 37.68, lng: -85.09, state: 'KY' },
   '021175': { name: 'Owen County, KY', lat: 38.79, lng: -84.90, state: 'KY' },
   '021185': { name: 'Robertson County, KY', lat: 38.42, lng: -84.29, state: 'KY' },
-  // NUEVOS PARA FLOOD WARNING
   '021055': { name: 'Estill County, KY', lat: 38.38, lng: -83.73, state: 'KY' },
   '021225': { name: 'Whitley County, KY', lat: 36.75, lng: -84.26, state: 'KY' },
 
@@ -73,6 +71,65 @@ export const COUNTY_COORDS: Record<string, County> = {
   '018163': { name: 'Warrick County, IN', lat: 38.24, lng: -87.32, state: 'IN' },
   '018007': { name: 'Dearborn County, IN', lat: 39.06, lng: -84.97, state: 'IN' },
   '018053': { name: 'Floyd County, IN', lat: 38.21, lng: -85.64, state: 'IN' },
+};
+
+// ZIP CODES Y DIRECCIONES POR CONDADO
+export const COUNTY_ZIP_CODES: Record<string, { zips: string; address: string }> = {
+  // Illinois
+  '017031': { zips: '60601-60699', address: 'Chicago, IL 60601' },
+  '017097': { zips: '60001-60099', address: 'Highland Park, IL 60035' },
+  '017111': { zips: '60010-60099', address: 'Crystal Lake, IL 60014' },
+  '017089': { zips: '60103-60199', address: 'Aurora, IL 60504' },
+  '017043': { zips: '60101-60199', address: 'Wheaton, IL 60187' },
+  '017093': { zips: '60417-60499', address: 'Joliet, IL 60432' },
+  '017063': { zips: '60441-60499', address: 'Morris, IL 60450' },
+  '017197': { zips: '60426-60499', address: 'Wilmington, IL 60481' },
+  '017099': { zips: '61701-61799', address: 'Bloomington, IL 61701' },
+  '017157': { zips: '61520-61599', address: 'Pekin, IL 61554' },
+  '017077': { zips: '61330-61399', address: 'Lewistown, IL 61542' },
+  '017055': { zips: '60914-60999', address: 'Gilman, IL 60938' },
+  '017179': { zips: '62995-62999', address: 'Nashville, IL 62263' },
+  '017133': { zips: '62895-62899', address: 'Du Quoin, IL 62832' },
+  '017201': { zips: '62968-62999', address: 'Marion, IL 62959' },
+  '017059': { zips: '62938-62999', address: 'Shawneetown, IL 62984' },
+  '017069': { zips: '62821-62899', address: 'Elizabethtown, IL 62931' },
+
+  // Wisconsin
+  '055079': { zips: '53703-53799', address: 'Madison, WI 53703' },
+  '055025': { zips: '53201-53299', address: 'Milwaukee, WI 53201' },
+  '055087': { zips: '54701-54799', address: 'Eau Claire, WI 54701' },
+  '055013': { zips: '54729-54799', address: 'Chippewa Falls, WI 54729' },
+  '055011': { zips: '54401-54499', address: 'Neillsville, WI 54456' },
+  '055039': { zips: '54703-54799', address: 'Menomonie, WI 54751' },
+  '055055': { zips: '53934-53999', address: 'Jefferson, WI 53549' },
+  '055059': { zips: '53140-53199', address: 'Kenosha, WI 53140' },
+  '055063': { zips: '54601-54699', address: 'La Crosse, WI 54601' },
+  '055067': { zips: '54520-54599', address: 'Antigo, WI 54409' },
+  '055089': { zips: '54536-54599', address: 'Florence, WI 54121' },
+  '055099': { zips: '54948-54999', address: 'Green Lake, WI 54941' },
+
+  // Kentucky
+  '021061': { zips: '41011-41099', address: 'Warsaw, KY 41095' },
+  '021087': { zips: '40109-40199', address: 'Elizabethtown, KY 42701' },
+  '021041': { zips: '41214-41299', address: 'Marion, KY 42064' },
+  '021025': { zips: '42401-42499', address: 'Morganfield, KY 42437' },
+  '021179': { zips: '40314-40399', address: 'Falmouth, KY 41040' },
+  '021015': { zips: '40303-40399', address: 'Paris, KY 40361' },
+  '021049': { zips: '40601-40699', address: 'Frankfort, KY 40601' },
+  '021067': { zips: '41048-41099', address: 'Williamstown, KY 41097' },
+  '021111': { zips: '40201-40299', address: 'Louisville, KY 40201' },
+  '021151': { zips: '40346-40399', address: 'Lebanon, KY 40033' },
+  '021175': { zips: '40359-40399', address: 'Owenton, KY 40359' },
+  '021185': { zips: '41360-41399', address: 'Mount Olivet, KY 41064' },
+  '021055': { zips: '41435-41499', address: 'Irvine, KY 40336' },
+  '021225': { zips: '40701-40799', address: 'Williamsburg, KY 40769' },
+
+  // Indiana
+  '018095': { zips: '47659-47699', address: 'Mount Vernon, IN 47620' },
+  '018127': { zips: '47701-47799', address: 'Evansville, IN 47701' },
+  '018163': { zips: '47589-47699', address: 'Boonville, IN 47601' },
+  '018007': { zips: '47012-47099', address: 'Lawrenceburg, IN 47025' },
+  '018053': { zips: '47119-47199', address: 'New Albany, IN 47150' },
 };
 
 export const TILE_LAYER_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';

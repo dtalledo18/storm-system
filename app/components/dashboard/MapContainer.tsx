@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { AlertFeature, County} from "@/app/types/types-alert";
-import { TILE_LAYER_URL, TILE_LAYER_ATTRIBUTION, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, COUNTIES_RADIUS} from "@/app/utils/utils-constants";
+import { TILE_LAYER_URL, TILE_LAYER_ATTRIBUTION, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, COUNTIES_RADIUS, COUNTY_ZIP_CODES } from "@/app/utils/utils-constants";
 
 interface MapContainerProps {
   alerts: AlertFeature[];
@@ -106,6 +106,9 @@ export function MapContainer({
         const county = countyCoords[code];
         if (!county) return;
 
+        // Obtener ZIP code y dirección del condado
+        const zipData = COUNTY_ZIP_CODES[code] || { zips: 'N/A', address: 'N/A' };
+
         if (showCircles) {
           try {
             const circle = L.circle([county.lat, county.lng], {
@@ -135,21 +138,35 @@ export function MapContainer({
           });
 
           const marker = L.marker([county.lat, county.lng], { icon }).addTo(map);
-          marker.bindPopup(`
-            <div style="min-width:220px; color: #e2e8f0; font-family: 'Rajdhani', sans-serif;">
-              <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:6px">${props.event || 'Alert'}</div>
-              <div style="font-size:10px;color:#94a3b8;margin-bottom:8px"><strong>Area:</strong> ${county.name}</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px">
+
+          const popupContent = `
+            <div style="min-width:280px; color: #e2e8f0; font-family: 'Rajdhani', sans-serif;">
+              <div style="font-size:14px;font-weight:700;color:${color};margin-bottom:8px">${props.event || 'Alert'}</div>
+              
+              <div style="font-size:11px;color:#e2e8f0;margin-bottom:8px">
+                <div style="color:#0ea5e9;font-weight:600">${zipData.address}</div>
+              </div>
+              
+              <div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><strong>County:</strong> ${county.name}</div>
+              <div style="font-size:10px;color:#94a3b8;margin-bottom:8px"><strong>ZIP Codes:</strong> <span style="color:#38bdf8;font-weight:600">${zipData.zips}</span></div>
+              
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;margin-bottom:8px">
                 <div style="color:#94a3b8">Severity</div><div style="color:${color};font-weight:700">${severity}</div>
                 <div style="color:#94a3b8">Urgency</div><div style="color:#e2e8f0">${props.urgency || '—'}</div>
                 <div style="color:#94a3b8">Certainty</div><div style="color:#e2e8f0">${props.certainty || '—'}</div>
                 <div style="color:#94a3b8">Status</div><div style="color:#e2e8f0">${props.status || '—'}</div>
               </div>
-              <div style="margin-top:8px;padding-top:6px;border-top:1px solid #1e3a5f;font-size:9px;color:#0ea5e9">
-                Sent: ${new Date(props.sent).toLocaleString()}
+
+              <div style="padding-top:6px;border-top:1px solid #1e3a5f">
+                <div style="font-size:9px;color:#0ea5e9;line-height:1.6">
+                  <div><strong>Sent:</strong> ${new Date(props.sent).toLocaleString()}</div>
+                  <div><strong>Effective:</strong> ${new Date(props.effective).toLocaleString()}</div>
+                </div>
               </div>
             </div>
-          `);
+          `;
+
+          marker.bindPopup(popupContent);
           markersRef.current.push(marker);
         } catch (e) {
           console.error('Error adding marker:', e);
