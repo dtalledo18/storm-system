@@ -4,8 +4,7 @@
 
 import { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
-import { AlertFeature } from '@/types/alert';
-import { CHART_COLORS } from '@/utils/constants';
+import { AlertFeature} from "@/app/types/types-alert";
 
 interface AlertDistributionChartProps {
   alerts: AlertFeature[];
@@ -51,27 +50,60 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
           {
             label: 'Alert Count',
             data: [counts.Critical, counts.Severe, counts.Moderate, counts.Minor],
-            backgroundColor: ['#ef444488', '#f9731688', '#eab30888', '#94a3b888'],
+            backgroundColor: ['rgba(239, 68, 68, 0.5)', 'rgba(249, 115, 22, 0.5)', 'rgba(234, 179, 8, 0.5)', 'rgba(148, 163, 184, 0.5)'],
             borderColor: ['#ef4444', '#f97316', '#eab308', '#94a3b8'],
             borderWidth: 1.5,
-            borderRadius: 4
+            borderRadius: 4,
+            borderSkipped: false
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        indexAxis: 'y',
+        plugins: {
+          legend: {
+            display: false,
+            labels: {
+              font: { family: 'Rajdhani, sans-serif', size: 12 }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleColor: '#e2e8f0',
+            bodyColor: '#e2e8f0',
+            borderColor: '#1e3a5f',
+            borderWidth: 1,
+            padding: 8,
+            titleFont: { family: 'Rajdhani, sans-serif', size: 12, weight: 'bold' },
+            bodyFont: { family: 'Rajdhani, sans-serif', size: 11 }
+          }
+        },
         scales: {
           x: {
-            ticks: { color: '#64748b', font: { size: 9, family: 'Rajdhani' } },
-            grid: { color: 'rgba(30,58,95,.4)' },
-            border: { color: 'transparent' }
+            stacked: false,
+            ticks: {
+              color: '#64748b',
+              font: { size: 9, family: 'Rajdhani, sans-serif' },
+              stepSize: 1
+            },
+            grid: {
+              color: 'rgba(30, 58, 95, 0.4)',
+              drawBorder: true,
+              borderColor: 'rgba(30, 58, 95, 0.4)'
+            }
           },
           y: {
-            ticks: { color: '#64748b', font: { size: 9 } },
-            grid: { color: 'rgba(30,58,95,.4)' },
-            border: { color: 'transparent' }
+            ticks: {
+              color: '#64748b',
+              font: { size: 9, family: 'Rajdhani, sans-serif' }
+            },
+            grid: {
+              color: 'rgba(30, 58, 95, 0.4)',
+              drawBorder: true,
+              borderColor: 'rgba(30, 58, 95, 0.4)'
+            }
           }
         }
       }
@@ -85,10 +117,14 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
   }, [alerts]);
 
   return (
-    <div className="chart-wrap">
-      <div style={{ position: 'relative', height: '180px' }}>
-        <canvas ref={canvasRef} role="img" aria-label="Bar chart showing alerts by severity level." />
+      <div className="bg-slate-800 border border-blue-900 rounded p-2">
+        <div style={{ position: 'relative', height: '140px' }}>
+          <canvas
+              ref={canvasRef}
+              role="img"
+              aria-label="Bar chart showing alerts by severity level."
+          />
+        </div>
       </div>
-    </div>
   );
 }

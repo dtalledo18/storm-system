@@ -1,6 +1,6 @@
 // services/weatherService.ts
 
-import { AlertResponse } from '@/types/alert';
+import { AlertResponse} from "@/app/types/types-alert";
 
 const API_BASE = 'https://api.weather.gov/alerts/active';
 

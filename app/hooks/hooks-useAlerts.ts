@@ -3,9 +3,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AlertFeature, FilterState, KPIData } from '@/types/alert';
-import { fetchAlerts, getLastUpdateTime } from '@/services/weatherService';
-import { COUNTY_COORDS } from '@/utils/constants';
+import { AlertFeature, FilterState, KPIData} from "@/app/types/types-alert";
+import { fetchAlerts, getLastUpdateTime} from "@/app/services/services-weatherService";
+import { COUNTY_COORDS} from "@/app/utils/utils-constants";
 
 export function useAlerts() {
   const [alerts, setAlerts] = useState<AlertFeature[]>([]);
@@ -37,7 +37,6 @@ export function useAlerts() {
   // Cargar alertas al montar el componente
   useEffect(() => {
     loadAlerts();
-    // Recargar cada 60 segundos
     const interval = setInterval(loadAlerts, 60000);
     return () => clearInterval(interval);
   }, [loadAlerts]);

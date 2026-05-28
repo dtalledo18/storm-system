@@ -37,11 +37,11 @@ export interface County {
   name: string;
   lat: number;
   lng: number;
-  state: 'IL' | 'WI';
+  state: 'IL' | 'WI' | 'KY' | 'IN'  ;
 }
 
 export interface FilterState {
-  state: 'ALL' | 'IL' | 'WI';
+  state: 'ALL' | 'IL' | 'WI'| 'KY' | 'IN' ;
   severity: 'ALL' | 'Critical' | 'Severe' | 'Moderate' | 'Minor';
   eventType: 'ALL' | 'HAIL' | 'WARNING' | 'WATCH';
 }
