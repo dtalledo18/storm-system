@@ -89,9 +89,7 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
               stepSize: 1
             },
             grid: {
-              color: 'rgba(30, 58, 95, 0.4)',
-              drawBorder: true,
-              borderColor: 'rgba(30, 58, 95, 0.4)'
+              color: 'rgba(30, 58, 95, 0.4)'
             }
           },
           y: {
@@ -101,8 +99,6 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
             },
             grid: {
               color: 'rgba(30, 58, 95, 0.4)',
-              drawBorder: true,
-              borderColor: 'rgba(30, 58, 95, 0.4)'
             }
           }
         }
