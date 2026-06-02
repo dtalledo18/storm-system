@@ -2,7 +2,7 @@
 
 'use client';
 
-import { FilterState} from "@/app/types/types-alert";
+import { FilterState } from "@/app/types/types-alert";
 
 interface FilterBarProps {
     filters: FilterState;
@@ -11,16 +11,16 @@ interface FilterBarProps {
 
 export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
     const filterBtnClass = (isActive: boolean) =>
-        `px-3 py-1 text-xs rounded-full border transition-all font-medium ${
+        `px-4 py-1 text-xs rounded-full border transition-all font-medium ${
             isActive
-                ? 'bg-cyan-500 bg-opacity-15 border-cyan-500 text-white' // Cambiado text-cyan-400 a text-white
-                : 'bg-slate-800 border-blue-900 text-slate-400 hover:border-cyan-500 hover:text-cyan-400'
+                ? 'bg-[#FFD700] text-[#06142e] border-[#FFD700] font-bold' // Estado activo: Amarillo
+                : 'bg-transparent border-[#1e3a8a] text-slate-300 hover:border-slate-500' // Estado inactivo: Borde azul
         }`;
 
     return (
-        <div className="bg-slate-900 border-b border-blue-900 px-4 py-2 flex items-center gap-3 flex-wrap">
+        <div className="bg-[#06142e] border-b border-[#1e3a8a] px-4 py-3 flex items-center gap-4 flex-wrap">
             {/* State Filter */}
-            <div className="text-xs text-slate-500 font-bold uppercase tracking-widest">State:</div>
+            <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">STATE:</div>
             <button
                 className={filterBtnClass(filters.state === 'ALL')}
                 onClick={() => onFilterChange('state', 'ALL')}
@@ -41,26 +41,26 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
             </button>
 
             {/* Separator */}
-            <div className="w-px h-5 bg-blue-900"></div>
+            <div className="w-px h-5 bg-[#1e3a8a]"></div>
 
             {/* Severity Filter */}
-            <div className="text-xs text-slate-500 font-bold uppercase tracking-widest">Severity:</div>
+            <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">SEVERITY:</div>
             <select
-                className="px-2 py-1 text-xs bg-slate-800 border border-blue-900 rounded text-slate-400 hover:border-cyan-500 focus:outline-none focus:border-cyan-500 font-medium"
+                className={`px-4 py-1 text-xs rounded-full border transition-all font-medium bg-[#FFD700] text-[#06142e] border-[#FFD700] focus:outline-none`}
                 value={filters.severity}
                 onChange={(e) => onFilterChange('severity', e.target.value)}
             >
-                <option value="ALL">All Severity</option>
+                <option value="ALL">All Severity ▾</option>
                 <option value="Critical">Critical</option>
                 <option value="Moderate">Moderate</option>
                 <option value="Minor">Minor</option>
             </select>
 
             {/* Separator */}
-            <div className="w-px h-5 bg-blue-900"></div>
+            <div className="w-px h-5 bg-[#1e3a8a]"></div>
 
             {/* Event Type Filter */}
-            <div className="text-xs text-slate-500 font-bold uppercase tracking-widest">Event Type:</div>
+            <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">TYPE:</div>
             <button
                 className={filterBtnClass(filters.eventType === 'ALL')}
                 onClick={() => onFilterChange('eventType', 'ALL')}

@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [showCircles, setShowCircles] = useState(true);
 
   return (
-      <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden">
+      <div className="flex flex-col h-screen w-screen bg-[#06142e] text-slate-100 overflow-hidden">
         {/* HEADER */}
         <Header alertCount={alerts.length} lastUpdate={kpis.lastUpdate} />
 
@@ -41,9 +41,9 @@ export default function DashboardPage() {
         <div className="flex flex-1 overflow-hidden gap-0 min-h-0">
 
           {/* LEFT PANEL */}
-          <div className="w-60 bg-slate-900 border-r border-blue-900 overflow-y-auto p-3 flex-shrink-0">
+          <div className="w-60 bg-[#0a1b3a] border-r border-[#1e3a8a] overflow-y-auto p-3 flex-shrink-0">
             {/* KPIs */}
-            <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 pb-1.5 border-b border-blue-900">
+            <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a]">
               Executive KPIs
             </div>
             <div className="grid grid-cols-2 gap-1.5 mb-3">
@@ -56,7 +56,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Alert Zones */}
-            <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 pb-1.5 border-b border-blue-900">
+            <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a]">
               Alert Zones
             </div>
             <AlertZoneList
@@ -66,8 +66,8 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* MAP CONTAINER - RELATIVE PARA LOS BADGES ABSOLUTOS */}
-          <div className="flex-1 relative bg-slate-950 overflow-hidden min-h-0">
+          {/* MAP CONTAINER */}
+          <div className="flex-1 relative bg-[#06142e] overflow-hidden min-h-0">
             {/* MAP */}
             <MapContainer
                 alerts={alerts}
@@ -77,23 +77,22 @@ export default function DashboardPage() {
                 coverage={alerts.length}
             />
 
-            {/* BADGES SUPERPUESTOS - FUERA DEL MAPCONTAINER */}
-            {/* LIVE ALERTS BADGE - TOP LEFT */}
+            {/* BADGES SUPERPUESTOS */}
             <div className="absolute top-3 left-15 z-999 pointer-events-none">
-              <div className="bg-slate-900 bg-opacity-90 border border-blue-900 rounded px-3 py-2 mb-2 pointer-events-auto backdrop-blur-sm">
-                <div className="text-xs uppercase tracking-widest text-slate-500 font-bold">Active Alerts</div>
-                <div className="text-sm font-bold text-cyan-400">{alerts.length} Alerts</div>
+              <div className="bg-[#0a1b3a] bg-opacity-90 border border-[#1e3a8a] rounded px-3 py-2 mb-2 pointer-events-auto backdrop-blur-sm">
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold">Active Alerts</div>
+                <div className="text-sm font-bold text-[#FFD700]">{alerts.length} Alerts</div>
               </div>
-              <div className="bg-slate-900 bg-opacity-90 border border-blue-900 rounded px-3 py-2 pointer-events-auto backdrop-blur-sm">
-                <div className="text-xs uppercase tracking-widest text-slate-500 font-bold">Data Source</div>
-                <div className="text-sm font-bold text-cyan-400">weather.gov API</div>
+              <div className="bg-[#0a1b3a] bg-opacity-90 border border-[#1e3a8a] rounded px-3 py-2 pointer-events-auto backdrop-blur-sm">
+                <div className="text-xs uppercase tracking-widest text-slate-400 font-bold">Data Source</div>
+                <div className="text-sm font-bold text-[#FFD700]">weather.gov API</div>
               </div>
             </div>
 
             {/* LEGEND - BOTTOM LEFT */}
             <div className="absolute bottom-5 left-3 z-999">
-              <div className="bg-slate-900 bg-opacity-90 border border-blue-900 rounded-lg p-3 backdrop-blur-sm">
-                <div className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-2">Alert Classification</div>
+              <div className="bg-[#0a1b3a] bg-opacity-90 border border-[#1e3a8a] rounded-lg p-3 backdrop-blur-sm">
+                <div className="text-xs uppercase tracking-widest text-[#FFD700] font-bold mb-2">Alert Classification</div>
 
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }}></div>
@@ -119,9 +118,8 @@ export default function DashboardPage() {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="w-72 bg-slate-900 border-l border-blue-900 overflow-y-auto p-3 flex-shrink-0">
-            {/* Real-Time Alerts */}
-            <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 pb-1.5 border-b border-blue-900">
+          <div className="w-72 bg-[#0a1b3a] border-l border-[#1e3a8a] overflow-y-auto p-3 flex-shrink-0">
+            <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a]">
               Real-Time Alerts
             </div>
             <RealTimeAlerts
@@ -129,32 +127,30 @@ export default function DashboardPage() {
                 severityColors={SEVERITY_COLORS}
             />
 
-            {/* Alert Distribution Chart */}
-            <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 pb-1.5 border-b border-blue-900 mt-2.5">
+            <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a] mt-2.5">
               Alert Distribution
             </div>
             <AlertDistributionChart alerts={alerts} />
 
-            {/* Recommendations */}
-            <div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 pb-1.5 border-b border-blue-900 mt-2.5">
+            <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a] mt-2.5">
               Strategic Recommendations
             </div>
 
-            <div className="flex gap-2 mb-1.5 p-1.5 bg-slate-800 border border-blue-900 rounded border-l-4 border-l-cyan-500">
+            <div className="flex gap-2 mb-1.5 p-1.5 bg-[#0a1b3a] border border-[#1e3a8a] rounded border-l-4 border-l-cyan-500">
               <div className="text-xs text-slate-400">
                 <strong className="text-slate-200 block text-sm mb-0.5">Monitor Active Zones</strong>
                 Circles on map show real-time weather.gov alert boundaries.
               </div>
             </div>
 
-            <div className="flex gap-2 mb-1.5 p-1.5 bg-slate-800 border border-blue-900 rounded border-l-4 border-l-purple-500">
+            <div className="flex gap-2 mb-1.5 p-1.5 bg-[#0a1b3a] border border-[#1e3a8a] rounded border-l-4 border-l-purple-500">
               <div className="text-xs text-slate-400">
                 <strong className="text-slate-200 block text-sm mb-0.5">API Refresh Interval</strong>
                 Data updates automatically from NOAA.
               </div>
             </div>
 
-            <div className="flex gap-2 p-1.5 bg-slate-800 border border-blue-900 rounded border-l-4 border-l-amber-500">
+            <div className="flex gap-2 p-1.5 bg-[#0a1b3a] border border-[#1e3a8a] rounded border-l-4 border-l-amber-500">
               <div className="text-xs text-slate-400">
                 <strong className="text-slate-200 block text-sm mb-0.5">Severity Filtering</strong>
                 Use filters to isolate Critical/Severe events.
@@ -164,38 +160,38 @@ export default function DashboardPage() {
         </div>
 
         {/* BOTTOM BAR */}
-        <div className="bg-slate-900 border-t border-blue-900 px-4 py-1.5 flex items-center justify-between flex-shrink-0">
+        <div className="bg-[#0a1b3a] border-t border-[#1e3a8a] px-4 py-1.5 flex items-center justify-between flex-shrink-0">
           <div className="flex gap-4 text-xs text-slate-400">
             <div className="flex items-center gap-1.5">
-              Total Alerts: <span className="font-bold text-cyan-400">{alerts.length}</span>
+              Total Alerts: <span className="font-bold text-[#FFD700]">{alerts.length}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              Active Zones: <span className="font-bold text-cyan-400">{kpis.affectedCounties}</span>
+              Active Zones: <span className="font-bold text-[#FFD700]">{kpis.affectedCounties}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              Data Source: <span className="font-bold text-cyan-400">NOAA/NWS</span>
+              Data Source: <span className="font-bold text-[#FFD700]">NOAA/NWS</span>
             </div>
             <div className="flex items-center gap-1.5">
-              Last Sync: <span className="font-bold text-cyan-400">{kpis.lastUpdate}</span>
+              Last Sync: <span className="font-bold text-[#FFD700]">{kpis.lastUpdate}</span>
             </div>
           </div>
 
           <div className="flex gap-2">
             <button
                 onClick={() => setShowCircles(!showCircles)}
-                className="px-3 py-1 text-xs bg-slate-800 border border-blue-900 rounded hover:border-cyan-500 hover:text-cyan-400 transition-all font-medium"
+                className="px-3 py-1 text-xs bg-[#0a1b3a] border border-[#1e3a8a] rounded hover:border-[#FFD700] hover:text-[#FFD700] transition-all font-medium"
             >
               ⊞ {showCircles ? 'Hide' : 'Show'} Zones
             </button>
             <button
                 onClick={loadAlerts}
-                className="px-3 py-1 text-xs bg-slate-800 border border-blue-900 rounded hover:border-cyan-500 hover:text-cyan-400 transition-all font-medium"
+                className="px-3 py-1 text-xs bg-[#0a1b3a] border border-[#1e3a8a] rounded hover:border-[#FFD700] hover:text-[#FFD700] transition-all font-medium"
             >
               ⊕ Fit Bounds
             </button>
             <button
                 onClick={loadAlerts}
-                className="px-3 py-1 text-xs bg-gradient-to-r from-blue-600 to-cyan-500 border border-cyan-500 rounded text-white font-bold hover:opacity-90 transition-all"
+                className="px-3 py-1 text-xs bg-[#FFD700] border border-[#FFD700] rounded text-[#06142e] font-bold hover:opacity-90 transition-all"
             >
               🔄 Refresh Data
             </button>
