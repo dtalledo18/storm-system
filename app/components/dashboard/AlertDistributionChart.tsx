@@ -108,7 +108,7 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
   }, [alerts]);
 
   return (
-      <div className="bg-[#0a1b3a] border border-[#1e3a8a] rounded p-2">
+      <div className="bg-[#0a204a] border border-[#1e3a8a] rounded p-2">
         <div style={{ position: 'relative', height: '140px' }}>
           <canvas
               ref={canvasRef}

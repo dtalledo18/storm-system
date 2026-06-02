@@ -23,7 +23,7 @@ export function RealTimeAlerts({
                 return (
                     <div
                         key={idx}
-                        className="bg-[#0a1b3a] border border-[#1e3a8a] rounded p-3"
+                        className="bg-[#0a204a] border border-[#1e3a8a] rounded p-3"
                         style={{ borderLeftColor: color, borderLeftWidth: '4px' }}
                     >
                         <div className="text-sm font-bold uppercase tracking-wide mb-1.5" style={{ color }}>
