@@ -18,7 +18,7 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-        <div className="flex items-center justify-center min-h-screen bg-[#06142e] text-slate-300">
+        <div className="flex items-center justify-center min-h-screen bg-[#081630] text-slate-300">
           {/* Contenedor tipo "Card" con los nuevos colores */}
           <div className="w-full max-w-sm bg-[#0a1b3a] border border-[#1e3a8a] p-8 shadow-2xl">
             <div className="mb-8 text-center">
