@@ -50,10 +50,10 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
           {
             label: 'Alert Count',
             data: [counts.Critical, counts.Severe, counts.Moderate, counts.Minor],
-            backgroundColor: ['rgba(239, 68, 68, 0.5)', 'rgba(249, 115, 22, 0.5)', 'rgba(234, 179, 8, 0.5)', 'rgba(148, 163, 184, 0.5)'],
-            borderColor: ['#ef4444', '#f97316', '#eab308', '#94a3b8'],
-            borderWidth: 1.5,
-            borderRadius: 4,
+            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#94a3b8'],
+            borderColor: 'transparent',
+            borderWidth: 0,
+            borderRadius: 2,
             borderSkipped: false
           }
         ]
@@ -64,41 +64,36 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
         indexAxis: 'y',
         plugins: {
           legend: {
-            display: false,
-            labels: {
-              font: { family: 'Rajdhani, sans-serif', size: 12 }
-            }
+            display: false
           },
           tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.9)',
-            titleColor: '#e2e8f0',
+            backgroundColor: '#0a1b3a',
+            titleColor: '#FFD700',
             bodyColor: '#e2e8f0',
-            borderColor: '#1e3a5f',
+            borderColor: '#1e3a8a',
             borderWidth: 1,
-            padding: 8,
-            titleFont: { family: 'Rajdhani, sans-serif', size: 12, weight: 'bold' },
-            bodyFont: { family: 'Rajdhani, sans-serif', size: 11 }
+            padding: 8
           }
         },
         scales: {
           x: {
             stacked: false,
             ticks: {
-              color: '#64748b',
-              font: { size: 9, family: 'Rajdhani, sans-serif' },
+              color: '#94a3b8',
+              font: { size: 9 },
               stepSize: 1
             },
             grid: {
-              color: 'rgba(30, 58, 95, 0.4)'
+              color: '#1e3a8a'
             }
           },
           y: {
             ticks: {
-              color: '#64748b',
-              font: { size: 9, family: 'Rajdhani, sans-serif' }
+              color: '#e2e8f0',
+              font: { size: 10, weight: 'bold' }
             },
             grid: {
-              color: 'rgba(30, 58, 95, 0.4)',
+              display: false // Sin líneas de rejilla en el eje Y para limpiar el diseño
             }
           }
         }
@@ -113,7 +108,7 @@ export function AlertDistributionChart({ alerts }: AlertDistributionChartProps) 
   }, [alerts]);
 
   return (
-      <div className="bg-slate-800 border border-blue-900 rounded p-2">
+      <div className="bg-[#0a1b3a] border border-[#1e3a8a] rounded p-2">
         <div style={{ position: 'relative', height: '140px' }}>
           <canvas
               ref={canvasRef}
