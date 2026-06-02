@@ -49,22 +49,6 @@ export const COUNTY_COORDS: Record<string, County> = {
   '055089': { name: 'Florence County, WI', lat: 45.97, lng: -88.25, state: 'WI' },
   '055099': { name: 'Green Lake County, WI', lat: 43.85, lng: -88.89, state: 'WI' },
 
-  // ============ KENTUCKY COUNTIES ============
-  '021061': { name: 'Gallatin County, KY', lat: 38.74, lng: -84.42, state: 'KY' },
-  '021087': { name: 'Hardin County, KY', lat: 37.78, lng: -85.94, state: 'KY' },
-  '021041': { name: 'Crittenden County, KY', lat: 38.36, lng: -84.81, state: 'KY' },
-  '021025': { name: 'Union County, KY', lat: 38.53, lng: -87.76, state: 'KY' },
-  '021179': { name: 'Pendleton County, KY', lat: 38.64, lng: -84.07, state: 'KY' },
-  '021015': { name: 'Bourbon County, KY', lat: 38.20, lng: -84.16, state: 'KY' },
-  '021049': { name: 'Franklin County, KY', lat: 38.20, lng: -84.87, state: 'KY' },
-  '021067': { name: 'Grant County, KY', lat: 38.48, lng: -84.51, state: 'KY' },
-  '021111': { name: 'Jefferson County, KY', lat: 38.30, lng: -85.65, state: 'KY' },
-  '021151': { name: 'Marion County, KY', lat: 37.68, lng: -85.09, state: 'KY' },
-  '021175': { name: 'Owen County, KY', lat: 38.79, lng: -84.90, state: 'KY' },
-  '021185': { name: 'Robertson County, KY', lat: 38.42, lng: -84.29, state: 'KY' },
-  '021055': { name: 'Estill County, KY', lat: 38.38, lng: -83.73, state: 'KY' },
-  '021225': { name: 'Whitley County, KY', lat: 36.75, lng: -84.26, state: 'KY' },
-
   // ============ INDIANA COUNTIES ============
   '018095': { name: 'Posey County, IN', lat: 38.12, lng: -87.73, state: 'IN' },
   '018127': { name: 'Vanderburgh County, IN', lat: 37.97, lng: -87.55, state: 'IN' },
