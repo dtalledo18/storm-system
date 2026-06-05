@@ -27,35 +27,6 @@ export async function fetchAlerts(area: string = 'IL'): Promise<AlertResponse> {
   }
 }
 
-export async function fetchAlertsForMultipleAreas(
-  areas: string[] = ['IL', 'WI']
-): Promise<AlertResponse> {
-  try {
-    const responses = await Promise.all(
-      areas.map(area => fetchAlerts(area))
-    );
-
-    // Combinar todas las alertas
-    const allFeatures = responses.flatMap(resp => resp.features);
-
-    return {
-      type: 'FeatureCollection',
-      features: allFeatures,
-      updated: new Date().toISOString()
-    };
-  } catch (error) {
-    console.error('Error fetching multi-area alerts:', error);
-    return {
-      type: 'FeatureCollection',
-      features: [],
-      updated: new Date().toISOString()
-    };
-  }
-}
-
-/**
- * Obtiene el timestamp legible de la última actualización
- */
 export function getLastUpdateTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
