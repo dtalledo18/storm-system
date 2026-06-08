@@ -113,12 +113,8 @@ export function MapContainer({
           body: JSON.stringify({ payload })
         });
 
-
-
         // API returns [{ idx: number, score: number, reason: string }]
         const results: Array<{ idx: number; score: number; reason: string }> = await response.json();
-
-        console.log(results);
 
         console.log(`[Map] Batch results received: ${results.length}/${alertsToProcess.length}`);
 
@@ -190,134 +186,154 @@ export function MapContainer({
     markersRef.current = [];
     circlesRef.current = [];
 
+    // Group alerts by SAME code so counties with multiple alerts
+    // get ONE marker with a multi-section popup instead of stacked invisible markers.
+    const alertsByCounty = new Map<string, AlertFeature[]>();
     alerts.forEach(alert => {
-      const props = alert.properties;
-      const severity = props.severity || 'Unknown';
-      const color = severityColors[severity] || '#64748b';
-      const same = props.geocode?.SAME || [];
+      (alert.properties.geocode?.SAME || []).forEach(code => {
+        if (!countyCoords[code]) return;
+        if (!alertsByCounty.has(code)) alertsByCounty.set(code, []);
+        alertsByCounty.get(code)!.push(alert);
+      });
+    });
 
-      same.forEach(code => {
-        const county = countyCoords[code];
-        if (!county) return;
+    alertsByCounty.forEach((countyAlerts, code) => {
+      const county = countyCoords[code];
+      const zipData = COUNTY_ZIP_CODES[code] || { zips: 'N/A', address: 'N/A' };
 
-        const zipData = COUNTY_ZIP_CODES[code] || { zips: 'N/A', address: 'N/A' };
+      // Use highest severity alert to determine the marker color/size
+      const severityRank = ['Extreme','Critical','Severe','High','Moderate','Minor','Unknown'];
+      const topAlert = countyAlerts.sort((a, b) =>
+          severityRank.indexOf(a.properties.severity) - severityRank.indexOf(b.properties.severity)
+      )[0];
+      const topSeverity = topAlert.properties.severity || 'Unknown';
+      const topColor = severityColors[topSeverity] || '#64748b';
 
-        if (showCircles) {
+      // Circles — one per alert (different colors)
+      if (showCircles) {
+        countyAlerts.forEach(alert => {
+          const color = severityColors[alert.properties.severity] || '#64748b';
           try {
             const circle = L.circle([county.lat, county.lng], {
               radius: COUNTIES_RADIUS,
-              color,
-              fillColor: color,
-              fillOpacity: 0.12,
-              opacity: 0.35,
-              weight: 1.5,
+              color, fillColor: color,
+              fillOpacity: 0.12, opacity: 0.35, weight: 1.5,
             }).addTo(map);
             circlesRef.current.push(circle);
           } catch {}
-        }
+        });
+      }
 
-        try {
-          const sz = severity === 'Critical' || severity === 'Extreme' ? 14
-              : severity === 'Severe' || severity === 'High' ? 11 : 9;
+      // Single marker per county
+      try {
+        const sz = topSeverity === 'Critical' || topSeverity === 'Extreme' ? 14
+            : topSeverity === 'Severe' || topSeverity === 'High' ? 11 : 9;
 
-          const icon = L.divIcon({
-            className: 'custom-marker',
-            html: `<div style="width:${sz}px;height:${sz}px;background:${color};border-radius:50%;border:2px solid rgba(255,255,255,.6);box-shadow:0 0 ${sz}px ${color}88;position:relative;">
-              <div style="position:absolute;top:-1px;left:-1px;right:-1px;bottom:-1px;border-radius:50%;border:1px solid ${color};opacity:.4;animation:ping 2s infinite"></div>
-            </div>`,
-            iconSize: [sz, sz],
-            iconAnchor: [sz / 2, sz / 2],
-            popupAnchor: [0, -sz / 2],
-          });
+        // Show alert count badge if multiple alerts
+        const badge = countyAlerts.length > 1
+            ? `<div style="position:absolute;top:-6px;right:-6px;background:#f59e0b;color:#000;border-radius:50%;width:14px;height:14px;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;">${countyAlerts.length}</div>`
+            : '';
 
-          const marker = L.marker([county.lat, county.lng], { icon }).addTo(map);
-          // Sanitize: colons, dots, slashes in alert.id break getElementById in some browsers
-          const safeAlertId = alert.id.replace(/[^a-zA-Z0-9]/g, '_');
-          const popupId = `popup_${code}_${safeAlertId}`;
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="position:relative;width:${sz}px;height:${sz}px;">
+            <div style="width:${sz}px;height:${sz}px;background:${topColor};border-radius:50%;border:2px solid rgba(255,255,255,.6);box-shadow:0 0 ${sz}px ${topColor}88;">
+              <div style="position:absolute;top:-1px;left:-1px;right:-1px;bottom:-1px;border-radius:50%;border:1px solid ${topColor};opacity:.4;animation:ping 2s infinite"></div>
+            </div>
+            ${badge}
+          </div>`,
+          iconSize: [sz + 8, sz + 8],
+          iconAnchor: [(sz + 8) / 2, (sz + 8) / 2],
+          popupAnchor: [0, -(sz + 8) / 2],
+        });
 
-          // The popup HTML always starts with the loading spinner in the AI section.
-          // We never put "Data pending..." here — we let JS handle the update.
-          marker.bindPopup(`
-            <div style="min-width:280px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
-              <div style="font-size:14px;font-weight:700;color:${color};margin-bottom:8px">${props.event || 'Alert'}</div>
-              <div style="font-size:11px;color:#e2e8f0;margin-bottom:8px">
-                <div style="color:#0ea5e9;font-weight:600">${zipData.address}</div>
-              </div>
-              <div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><strong>County:</strong> ${county.name}</div>
-              <div style="font-size:10px;color:#94a3b8;margin-bottom:8px"><strong>ZIP Codes:</strong> <span style="color:#38bdf8;font-weight:600">${zipData.zips}</span></div>
-              
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;margin-bottom:8px">
-                <div style="color:#94a3b8">Severity</div><div style="color:${color};font-weight:700">${severity}</div>
+        const marker = L.marker([county.lat, county.lng], { icon }).addTo(map);
+        const popupId = `popup_county_${code}`;
+
+        // Build popup HTML with one section per alert
+        const alertSections = countyAlerts.map((alert, i) => {
+          const props = alert.properties;
+          const color = severityColors[props.severity] || '#64748b';
+          const safeId = `${popupId}_alert_${i}`;
+          return `
+            <div style="margin-bottom:${i < countyAlerts.length - 1 ? '10px' : '0'};padding-bottom:${i < countyAlerts.length - 1 ? '10px' : '0'};${i < countyAlerts.length - 1 ? 'border-bottom:1px solid #1e3a5f;' : ''}">
+              <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:6px">${props.event || 'Alert'}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:10px;margin-bottom:6px">
+                <div style="color:#94a3b8">Severity</div><div style="color:${color};font-weight:700">${props.severity || '—'}</div>
                 <div style="color:#94a3b8">Urgency</div><div style="color:#e2e8f0">${props.urgency || '—'}</div>
                 <div style="color:#94a3b8">Certainty</div><div style="color:#e2e8f0">${props.certainty || '—'}</div>
-                <div style="color:#94a3b8">Status</div><div style="color:#e2e8f0">${props.status || '—'}</div>
               </div>
-
-              <div id="${popupId}" style="padding-top:6px;border-top:1px solid #1e3a5f; margin-top:4px;">
-                <div style="display:flex; align-items:center; gap:8px; color:#94a3b8; font-size:10px; padding-top:6px;">
-                  <div class="spinner"></div> Analyzing Lead Potential...
+              <div id="${safeId}" style="padding-top:4px;">
+                <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:10px;">
+                  <div class="spinner"></div> Analyzing...
                 </div>
               </div>
-
-              <div style="padding-top:6px;border-top:1px solid #1e3a5f; margin-top:4px;">
-                <div style="font-size:9px;color:#0ea5e9;line-height:1.6">
-                  <div><strong>Sent:</strong> ${new Date(props.sent).toLocaleString()}</div>
-                  <div><strong>Effective:</strong> ${new Date(props.effective).toLocaleString()}</div>
-                </div>
+              <div style="font-size:9px;color:#0ea5e9;margin-top:4px;">
+                <strong>Effective:</strong> ${new Date(props.effective).toLocaleString()}
               </div>
             </div>
-          `);
+          `;
+        }).join('');
 
-          marker.on('popupopen', () => {
-            const container = document.getElementById(popupId);
+        marker.bindPopup(`
+          <div style="min-width:280px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
+            <div style="font-size:11px;color:#0ea5e9;font-weight:600;margin-bottom:4px">${zipData.address}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><strong>County:</strong> ${county.name}</div>
+            <div style="font-size:10px;color:#94a3b8;margin-bottom:8px"><strong>ZIP Codes:</strong> <span style="color:#38bdf8;font-weight:600">${zipData.zips}</span></div>
+            ${countyAlerts.length > 1 ? `<div style="font-size:10px;color:#f59e0b;font-weight:700;margin-bottom:8px;">⚠ ${countyAlerts.length} Active Alerts</div>` : ''}
+            <div style="border-top:1px solid #1e3a5f;padding-top:8px;">
+              ${alertSections}
+            </div>
+          </div>
+        `, { maxHeight: 400 });
+
+        marker.on('popupopen', () => {
+          countyAlerts.forEach((alert, i) => {
+            const safeId = `${popupId}_alert_${i}`;
+            const container = document.getElementById(safeId);
             if (!container) return;
 
-            // Case 1: Data already available — render immediately
             const scoreData = leadScoresRef.current[alert.id];
             if (scoreData) {
               renderScore(container, scoreData);
               return;
             }
 
-            // Case 2: Data not yet available — show spinner and poll the ref
-            // (The spinner is already in the HTML from bindPopup, so no change needed yet)
             renderLoading(container);
 
-            // Poll every 500ms until data arrives or popup closes
-            const watcherKey = popupId;
+            const watcherKey = safeId;
             const interval = setInterval(() => {
-              // If the container is no longer in the DOM, the popup was closed — stop polling
-              if (!document.getElementById(popupId)) {
+              if (!document.getElementById(safeId)) {
                 clearInterval(interval);
                 activeWatchersRef.current.delete(watcherKey);
                 return;
               }
-
               const data = leadScoresRef.current[alert.id];
               if (data) {
                 clearInterval(interval);
                 activeWatchersRef.current.delete(watcherKey);
-                const el = document.getElementById(popupId);
+                const el = document.getElementById(safeId);
                 if (el) renderScore(el, data);
               }
             }, 500);
 
-            // Store so we can clean up if needed
             activeWatchersRef.current.set(watcherKey, interval);
           });
+        });
 
-          // Clear the watcher when popup closes to avoid memory leaks
-          marker.on('popupclose', () => {
-            const existing = activeWatchersRef.current.get(popupId);
+        marker.on('popupclose', () => {
+          countyAlerts.forEach((_, i) => {
+            const safeId = `${popupId}_alert_${i}`;
+            const existing = activeWatchersRef.current.get(safeId);
             if (existing) {
               clearInterval(existing);
-              activeWatchersRef.current.delete(popupId);
+              activeWatchersRef.current.delete(safeId);
             }
           });
+        });
 
-          markersRef.current.push(marker);
-        } catch {}
-      });
+        markersRef.current.push(marker);
+      } catch {}
     });
   }, [alerts, countyCoords, severityColors, showCircles]);
 
