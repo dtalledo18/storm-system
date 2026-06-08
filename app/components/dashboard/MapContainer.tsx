@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import {useEffect, useRef, useState} from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { AlertFeature, County } from "@/app/types/types-alert";
@@ -26,6 +26,34 @@ interface MapContainerProps {
   showJobsites?: boolean;
 }
 
+// Renders score HTML into a container element
+function renderScore(container: HTMLElement, data: { score: number; reason: string }) {
+  container.innerHTML = `
+    <div style="margin: 8px">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">
+          Lead Quality
+        </span>
+        <div class="score-tooltip" style="cursor: help;">
+          <span style="font-size: 20px; font-weight: 800; color: #10b981; line-height: 1;">
+            ${data.score}/10
+          </span>
+          <span class="tooltip-text">${data.reason}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Renders the loading spinner HTML
+function renderLoading(container: HTMLElement) {
+  container.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; color:#94a3b8; font-size:10px; padding-top:6px;">
+      <div class="spinner"></div> Analyzing Lead Potential...
+    </div>
+  `;
+}
+
 export function MapContainer({
                                alerts,
                                countyCoords,
@@ -41,7 +69,89 @@ export function MapContainer({
   const circlesRef = useRef<L.Circle[]>([]);
   const jobsiteMarkersRef = useRef<L.Marker[]>([]);
   const jobsiteCirclesRef = useRef<L.Circle[]>([]);
-  const leadCache = useRef<Record<string, { score: number; reason: string }>>({});
+
+  // Single source of truth: a ref for instant reads + state to trigger re-renders
+  const leadScoresRef = useRef<Record<string, { score: number, reason: string }>>({});
+  const [leadScores, setLeadScores] = useState<Record<string, { score: number, reason: string }>>({});
+
+  // Mutex: tracks IDs currently being fetched to prevent duplicate API calls
+  // (React StrictMode double-mounts effects in dev; this guards against that too)
+  const fetchingIdsRef = useRef<Set<string>>(new Set());
+
+  // Track active polling intervals so we can clear them on unmount / popup close
+  const activeWatchersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+
+  // Batch-fetch scores for all alerts that aren't yet in the ref.
+  // Depends ONLY on `alerts` — never on `leadScores` state, which would
+  // cause an infinite loop (state update → effect re-run → new batch call).
+  useEffect(() => {
+    const processAllAlerts = async () => {
+      // Filter out already-scored AND currently-in-flight alerts
+      const alertsToProcess = alerts.filter(
+          a => !leadScoresRef.current[a.id] && !fetchingIdsRef.current.has(a.id)
+      );
+      if (alertsToProcess.length === 0) return;
+
+      // Mark these IDs as in-flight immediately (before the async call)
+      alertsToProcess.forEach(a => fetchingIdsRef.current.add(a.id));
+
+      // Use index-based payload — never send real IDs to the AI model.
+      // LLMs can silently corrupt long URL strings (e.g. urn:oid → urn:ico).
+      // We map results back by index, which is 100% reliable.
+      const payload = alertsToProcess.map((a, idx) => ({
+        idx,
+        alert: a,
+        county: a.properties.areaDesc || "Unknown County"
+      }));
+
+      console.log(`[Map] Sending ${alertsToProcess.length} alerts to batch API.`);
+
+      try {
+        const response = await fetch('/api/leads/quality/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload })
+        });
+
+
+
+        // API returns [{ idx: number, score: number, reason: string }]
+        const results: Array<{ idx: number; score: number; reason: string }> = await response.json();
+
+        console.log(results);
+
+        console.log(`[Map] Batch results received: ${results.length}/${alertsToProcess.length}`);
+
+        // Map back by index — immune to AI ID corruption
+        results.forEach(r => {
+          const originalAlert = alertsToProcess[r.idx];
+          if (!originalAlert) {
+            console.warn(`[Map] No alert at idx ${r.idx}`);
+            return;
+          }
+          leadScoresRef.current[originalAlert.id] = { score: r.score, reason: r.reason };
+        });
+
+        setLeadScores(prev => {
+          const updated = { ...prev };
+          results.forEach(r => {
+            const originalAlert = alertsToProcess[r.idx];
+            if (originalAlert) updated[originalAlert.id] = { score: r.score, reason: r.reason };
+          });
+          return updated;
+        });
+
+        console.log("[Map] Ref now contains:", Object.keys(leadScoresRef.current).length, "entries");
+
+      } catch (e) {
+        console.error("[Map] Batch API error:", e);
+        // On failure, release the mutex so a retry is possible
+        alertsToProcess.forEach(a => fetchingIdsRef.current.delete(a.id));
+      }
+    };
+
+    if (alerts.length > 0) processAllAlerts();
+  }, [alerts]); // ← ONLY alerts — never leadScores
 
   // Init map once
   useEffect(() => {
@@ -62,6 +172,12 @@ export function MapContainer({
     } catch (error) {
       console.error('Error initializing map:', error);
     }
+
+    // Cleanup on unmount
+    return () => {
+      activeWatchersRef.current.forEach(interval => clearInterval(interval));
+      activeWatchersRef.current.clear();
+    };
   }, []);
 
   // Render alert markers
@@ -103,6 +219,7 @@ export function MapContainer({
         try {
           const sz = severity === 'Critical' || severity === 'Extreme' ? 14
               : severity === 'Severe' || severity === 'High' ? 11 : 9;
+
           const icon = L.divIcon({
             className: 'custom-marker',
             html: `<div style="width:${sz}px;height:${sz}px;background:${color};border-radius:50%;border:2px solid rgba(255,255,255,.6);box-shadow:0 0 ${sz}px ${color}88;position:relative;">
@@ -114,8 +231,12 @@ export function MapContainer({
           });
 
           const marker = L.marker([county.lat, county.lng], { icon }).addTo(map);
-          const popupId = `popup-${code}-${alert.id}`; // ID Único
+          // Sanitize: colons, dots, slashes in alert.id break getElementById in some browsers
+          const safeAlertId = alert.id.replace(/[^a-zA-Z0-9]/g, '_');
+          const popupId = `popup_${code}_${safeAlertId}`;
 
+          // The popup HTML always starts with the loading spinner in the AI section.
+          // We never put "Data pending..." here — we let JS handle the update.
           marker.bindPopup(`
             <div style="min-width:280px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
               <div style="font-size:14px;font-weight:700;color:${color};margin-bottom:8px">${props.event || 'Alert'}</div>
@@ -133,9 +254,9 @@ export function MapContainer({
               </div>
 
               <div id="${popupId}" style="padding-top:6px;border-top:1px solid #1e3a5f; margin-top:4px;">
-                 <div style="display:flex; align-items:center; gap:8px; color:#94a3b8; font-size:10px; padding-top:6px;">
-                   <div class="spinner"></div> Analyzing Lead Potential...
-                 </div>
+                <div style="display:flex; align-items:center; gap:8px; color:#94a3b8; font-size:10px; padding-top:6px;">
+                  <div class="spinner"></div> Analyzing Lead Potential...
+                </div>
               </div>
 
               <div style="padding-top:6px;border-top:1px solid #1e3a5f; margin-top:4px;">
@@ -147,59 +268,58 @@ export function MapContainer({
             </div>
           `);
 
-          // Evento al abrir para cargar la IA
-          marker.on('popupopen', async () => {
+          marker.on('popupopen', () => {
             const container = document.getElementById(popupId);
             if (!container) return;
 
-            // 1. Verificar si ya tenemos el dato en caché
-            if (leadCache.current[popupId]) {
-              const data = leadCache.current[popupId];
-              renderScore(container, data);
+            // Case 1: Data already available — render immediately
+            const scoreData = leadScoresRef.current[alert.id];
+            if (scoreData) {
+              renderScore(container, scoreData);
               return;
             }
 
-            // 2. Si no hay caché, mostrar spinner y consultar
-            try {
-              const res = await fetch('/api/leads/quality', {
-                method: 'POST',
-                body: JSON.stringify({ alert, countyName: county.name })
-              });
-              const data = await res.json();
+            // Case 2: Data not yet available — show spinner and poll the ref
+            // (The spinner is already in the HTML from bindPopup, so no change needed yet)
+            renderLoading(container);
 
-              // 3. Guardar en caché
-              leadCache.current[popupId] = data;
-              renderScore(container, data);
-            } catch {
-              container.innerHTML = '<div style="color:#ef4444; font-size:10px;">Error</div>';
-            }
+            // Poll every 500ms until data arrives or popup closes
+            const watcherKey = popupId;
+            const interval = setInterval(() => {
+              // If the container is no longer in the DOM, the popup was closed — stop polling
+              if (!document.getElementById(popupId)) {
+                clearInterval(interval);
+                activeWatchersRef.current.delete(watcherKey);
+                return;
+              }
+
+              const data = leadScoresRef.current[alert.id];
+              if (data) {
+                clearInterval(interval);
+                activeWatchersRef.current.delete(watcherKey);
+                const el = document.getElementById(popupId);
+                if (el) renderScore(el, data);
+              }
+            }, 500);
+
+            // Store so we can clean up if needed
+            activeWatchersRef.current.set(watcherKey, interval);
           });
 
-          function renderScore(container: HTMLElement, data: { score: number; reason: string }) {
-            container.innerHTML = `
-            <div style="margin: 8px">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">
-                  Lead Quality
-                </span>
-                <div class="score-tooltip" style="cursor: help;">
-                  <span style="font-size: 20px; font-weight: 800; color: #10b981; line-height: 1;">
-                    ${data.score}/10
-                  </span>
-                  <span class="tooltip-text">${data.reason}</span>
-                </div>
-              </div>
-            </div>
-          `;
-          }
+          // Clear the watcher when popup closes to avoid memory leaks
+          marker.on('popupclose', () => {
+            const existing = activeWatchersRef.current.get(popupId);
+            if (existing) {
+              clearInterval(existing);
+              activeWatchersRef.current.delete(popupId);
+            }
+          });
 
           markersRef.current.push(marker);
         } catch {}
       });
     });
   }, [alerts, countyCoords, severityColors, showCircles]);
-
-
 
   // Render jobsite markers + circles
   useEffect(() => {
@@ -214,7 +334,6 @@ export function MapContainer({
     if (!showJobsites) return;
 
     jobsites.filter(j => j.active).forEach(j => {
-      // Circle
       try {
         const circle = L.circle([j.lat, j.lng], {
           radius: j.radiusKm * 1000,
@@ -228,7 +347,6 @@ export function MapContainer({
         jobsiteCirclesRef.current.push(circle);
       } catch {}
 
-      // Custom pin icon
       try {
         const icon = L.divIcon({
           className: '',
@@ -292,7 +410,6 @@ export function MapContainer({
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
           }
 
-          /* Triangulito del tooltip */
           .score-tooltip .tooltip-text::after {
             content: "";
             position: absolute;
@@ -305,6 +422,22 @@ export function MapContainer({
           }
 
           .score-tooltip:hover .tooltip-text { visibility: visible; }
+
+          /* Spinner animation */
+          .spinner {
+            width: 10px;
+            height: 10px;
+            border: 2px solid #1e3a5f;
+            border-top-color: #38bdf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex-shrink: 0;
+          }
+
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+
           .leaflet-container {
             background: #080c14 !important;
             font-family: 'Rajdhani', sans-serif;
@@ -353,6 +486,7 @@ export function MapContainer({
             font-size: 8px !important;
           }
           .custom-marker { background: none !important; border: none !important; }
+
           @keyframes ping {
             0% { opacity: 1; transform: scale(1); }
             75%, 100% { opacity: 0; transform: scale(2); }
