@@ -18,6 +18,7 @@ export interface AlertProperties {
     SAME: string[];
     UGC: string[];
   };
+  leadScore?: { score: number; reason: string };
 }
 
 export interface AlertFeature {

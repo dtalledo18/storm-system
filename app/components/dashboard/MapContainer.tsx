@@ -41,6 +41,7 @@ export function MapContainer({
   const circlesRef = useRef<L.Circle[]>([]);
   const jobsiteMarkersRef = useRef<L.Marker[]>([]);
   const jobsiteCirclesRef = useRef<L.Circle[]>([]);
+  const leadCache = useRef<Record<string, { score: number; reason: string }>>({});
 
   // Init map once
   useEffect(() => {
@@ -113,6 +114,8 @@ export function MapContainer({
           });
 
           const marker = L.marker([county.lat, county.lng], { icon }).addTo(map);
+          const popupId = `popup-${code}-${alert.id}`; // ID Único
+
           marker.bindPopup(`
             <div style="min-width:280px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
               <div style="font-size:14px;font-weight:700;color:${color};margin-bottom:8px">${props.event || 'Alert'}</div>
@@ -121,13 +124,21 @@ export function MapContainer({
               </div>
               <div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><strong>County:</strong> ${county.name}</div>
               <div style="font-size:10px;color:#94a3b8;margin-bottom:8px"><strong>ZIP Codes:</strong> <span style="color:#38bdf8;font-weight:600">${zipData.zips}</span></div>
+              
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;margin-bottom:8px">
                 <div style="color:#94a3b8">Severity</div><div style="color:${color};font-weight:700">${severity}</div>
                 <div style="color:#94a3b8">Urgency</div><div style="color:#e2e8f0">${props.urgency || '—'}</div>
                 <div style="color:#94a3b8">Certainty</div><div style="color:#e2e8f0">${props.certainty || '—'}</div>
                 <div style="color:#94a3b8">Status</div><div style="color:#e2e8f0">${props.status || '—'}</div>
               </div>
-              <div style="padding-top:6px;border-top:1px solid #1e3a5f">
+
+              <div id="${popupId}" style="padding-top:6px;border-top:1px solid #1e3a5f; margin-top:4px;">
+                 <div style="display:flex; align-items:center; gap:8px; color:#94a3b8; font-size:10px; padding-top:6px;">
+                   <div class="spinner"></div> Analyzing Lead Potential...
+                 </div>
+              </div>
+
+              <div style="padding-top:6px;border-top:1px solid #1e3a5f; margin-top:4px;">
                 <div style="font-size:9px;color:#0ea5e9;line-height:1.6">
                   <div><strong>Sent:</strong> ${new Date(props.sent).toLocaleString()}</div>
                   <div><strong>Effective:</strong> ${new Date(props.effective).toLocaleString()}</div>
@@ -135,11 +146,60 @@ export function MapContainer({
               </div>
             </div>
           `);
+
+          // Evento al abrir para cargar la IA
+          marker.on('popupopen', async () => {
+            const container = document.getElementById(popupId);
+            if (!container) return;
+
+            // 1. Verificar si ya tenemos el dato en caché
+            if (leadCache.current[popupId]) {
+              const data = leadCache.current[popupId];
+              renderScore(container, data);
+              return;
+            }
+
+            // 2. Si no hay caché, mostrar spinner y consultar
+            try {
+              const res = await fetch('/api/leads/quality', {
+                method: 'POST',
+                body: JSON.stringify({ alert, countyName: county.name })
+              });
+              const data = await res.json();
+
+              // 3. Guardar en caché
+              leadCache.current[popupId] = data;
+              renderScore(container, data);
+            } catch {
+              container.innerHTML = '<div style="color:#ef4444; font-size:10px;">Error</div>';
+            }
+          });
+
+          function renderScore(container: HTMLElement, data: { score: number; reason: string }) {
+            container.innerHTML = `
+            <div style="margin: 8px">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">
+                  Lead Quality
+                </span>
+                <div class="score-tooltip" style="cursor: help;">
+                  <span style="font-size: 20px; font-weight: 800; color: #10b981; line-height: 1;">
+                    ${data.score}/10
+                  </span>
+                  <span class="tooltip-text">${data.reason}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          }
+
           markersRef.current.push(marker);
         } catch {}
       });
     });
   }, [alerts, countyCoords, severityColors, showCircles]);
+
+
 
   // Render jobsite markers + circles
   useEffect(() => {
@@ -210,6 +270,41 @@ export function MapContainer({
         <div ref={mapRef} className="w-full h-full" />
 
         <style jsx global>{`
+          .score-tooltip { position: relative; display: inline-block; }
+
+          .score-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 9999;
+            bottom: 150%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            font-weight: 400;
+            border: 1px solid #38bdf8;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+          }
+
+          /* Triangulito del tooltip */
+          .score-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #38bdf8 transparent transparent transparent;
+          }
+
+          .score-tooltip:hover .tooltip-text { visibility: visible; }
           .leaflet-container {
             background: #080c14 !important;
             font-family: 'Rajdhani', sans-serif;
