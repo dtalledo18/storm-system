@@ -104,3 +104,35 @@ export async function getBatchLeadQuality(
         return alertsData.map(a => ({ idx: a.idx, score: 0, reason: "Analysis failed." }));
     }
 }
+
+
+export async function prioritizeAddresses(addresses: string[]) {
+    const prompt = `
+        Actúa como un experto analista comercial de roofing. Prioriza esta lista de direcciones para door knocking basándote en un score (1-100).
+        
+        CRITERIOS (PESOS):
+        - 20% Densidad, 15% Edad vecindario, 10% Ingreso, 10% Valor casa, 
+        - 10% Visibilidad, 10% Tipo trabajo, 10% Tormentas recientes, 
+        - 5% Clientes existentes, 5% Facilidad knocking, 5% Referidos.
+
+        Direcciones: ${JSON.stringify(addresses)}
+
+        Responde ÚNICAMENTE en formato JSON:
+        [
+            { "address": "string", "priorityScore": number, "reasoning": "Breve explicación" }
+        ]
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-3.1-flash-lite",
+            contents: prompt,
+        });
+
+        const text = response.text || "[]";
+        return JSON.parse(text.replace(/```json|```/g, "").trim());
+    } catch (error) {
+        console.error("Error en priorización IA:", error);
+        return [];
+    }
+}

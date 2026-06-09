@@ -3,6 +3,8 @@
 'use client';
 
 import { FilterState } from "@/app/types/types-alert";
+import { AddressPrioritizerModal} from "@/app/components/dashboard/AddressPrioritizerModal";
+import {useState} from "react";
 
 interface FilterBarProps {
     filters: FilterState;
@@ -10,6 +12,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const filterBtnClass = (isActive: boolean) =>
         `px-4 py-1 text-xs rounded-full border transition-all font-medium ${
             isActive
@@ -85,6 +88,19 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
             >
                 Watches
             </button>
+            {/* Nuevo botón a la derecha */}
+            <div className="ml-auto">
+                <button
+                    className="flex items-center gap-2 bg-[#10b981] text-white px-4 py-1.5 rounded-md text-xs font-bold hover:bg-[#059669]"
+                    onClick={() => setIsModalOpen(true)}
+                >
+                    <span>⚡</span> PRIORITIZER
+                </button>
+            </div>
+            <AddressPrioritizerModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+            />
         </div>
     );
 }
