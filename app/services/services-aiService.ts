@@ -106,7 +106,13 @@ export async function getBatchLeadQuality(
 }
 
 
-export async function prioritizeAddresses(addresses: string[]) {
+export interface PrioritizedAddress {
+    address: string;
+    priorityScore: number;
+    reasoning: string;
+}
+
+export async function prioritizeAddresses(addresses: string[]): Promise<PrioritizedAddress[]> {
     const prompt = `
         Actúa como un experto analista comercial de roofing. Prioriza esta lista de direcciones para door knocking basándote en un score (1-100).
         
@@ -125,12 +131,18 @@ export async function prioritizeAddresses(addresses: string[]) {
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-3.1-flash-lite",
+            model: "gemini-3.1-flash-lite", // Asegúrate que este nombre de modelo sea correcto en tu SDK
             contents: prompt,
         });
 
+        // CORRECCIÓN: Definir 'text' a partir de la respuesta
         const text = response.text || "[]";
-        return JSON.parse(text.replace(/```json|```/g, "").trim());
+
+        // CORRECCIÓN: Limpieza robusta y parsing
+        const cleanJson = text.replace(/```json|```/g, "").trim();
+        const data: PrioritizedAddress[] = JSON.parse(cleanJson);
+
+        return data;
     } catch (error) {
         console.error("Error en priorización IA:", error);
         return [];

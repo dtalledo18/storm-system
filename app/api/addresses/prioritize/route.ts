@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prioritizeAddresses } from '@/app/services/services-aiService';
+import { prioritizeAddresses, PrioritizedAddress } from '@/app/services/services-aiService';
 
 export async function POST(req: Request) {
     try {
@@ -11,8 +11,10 @@ export async function POST(req: Request) {
 
         const prioritizedList = await prioritizeAddresses(addresses);
 
-        // Ordenamos por score descendente antes de devolver
-        const sorted = prioritizedList.sort((a, b) => b.priorityScore - a.priorityScore);
+        // Ahora TypeScript sabe que a y b son PrioritizedAddress
+        const sorted = prioritizedList.sort((a: PrioritizedAddress, b: PrioritizedAddress) =>
+            b.priorityScore - a.priorityScore
+        );
 
         return NextResponse.json(sorted);
     } catch (error) {
