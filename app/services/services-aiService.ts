@@ -148,3 +148,54 @@ export async function prioritizeAddresses(addresses: string[]): Promise<Prioriti
         return [];
     }
 }
+
+export interface CampaignData {
+    name: string;
+    lat: number;
+    lng: number;
+    radiusKm: number;
+}
+
+export async function extractCampaignDataFromImage(base64Image: string): Promise<CampaignData | null> {
+    const prompt = `
+        Analiza esta captura de pantalla de un mapa para una campaña de roofing.
+        Identifica la zona geográfica seleccionada, el marcador, o la ciudad principal visible.
+        Calcula:
+        1. Las coordenadas del centro (latitud y longitud). Por ejemplo, si es Skokie IL, busca sus coordenadas aproximadas.
+        2. El radio del círculo o la zona de cobertura en kilómetros (estima según la escala visual del mapa o el zoom). Si no es claro, usa un radio por defecto de 5.
+        3. Ponle un nombre descriptivo basado en la locación (ej. "Campaign - Skokie Area").
+
+        Responde ÚNICAMENTE con un objeto JSON válido con esta estructura:
+        {
+            "name": "string",
+            "lat": number,
+            "lng": number,
+            "radiusKm": number
+        }
+    `;
+
+    try {
+        // Extraemos la data limpia del base64 (removiendo el prefijo data:image/jpeg;base64,)
+        const base64Data = base64Image.split(',')[1] || base64Image;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-3.1-flash-lite", // Modelo óptimo para visión y estructuración rápida
+            contents: [
+                prompt,
+                {
+                    inlineData: {
+                        data: base64Data,
+                        mimeType: "image/jpeg"
+                    }
+                }
+            ],
+        });
+
+        const text = response.text || "{}";
+        const cleanJson = text.replace(/```json|```/g, "").trim();
+        return JSON.parse(cleanJson) as CampaignData;
+    } catch (error) {
+        console.error("Error analizando mapa con Gemini Visión:", error);
+        return null;
+    }
+}

@@ -5,14 +5,18 @@
 import { FilterState } from "@/app/types/types-alert";
 import { AddressPrioritizerModal} from "@/app/components/dashboard/AddressPrioritizerModal";
 import {useState} from "react";
+import {AddContactCampaignModal} from "@/app/components/dashboard/AddContactCampaignModal";
+import {CampaignData} from "@/app/services/services-aiService";
 
 interface FilterBarProps {
     filters: FilterState;
     onFilterChange: (filterName: keyof FilterState, value: string) => void;
+    onCampaignAdded: (data: CampaignData) => void; // Recibida desde la página principal
 }
 
-export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+export function FilterBar({ filters, onFilterChange, onCampaignAdded }: FilterBarProps) {
+    const [isPrioritizerOpen, setIsPrioritizerOpen] = useState(false);
+    const [isCampaignOpen, setIsCampaignOpen] = useState(false);
     const filterBtnClass = (isActive: boolean) =>
         `px-4 py-1 text-xs rounded-full border transition-all font-medium ${
             isActive
@@ -89,17 +93,28 @@ export function FilterBar({ filters, onFilterChange }: FilterBarProps) {
                 Watches
             </button>
             {/* Nuevo botón a la derecha */}
-            <div className="ml-auto">
+            {/* Botones de Acción a la Derecha */}
+            <div className="ml-auto flex items-center gap-2">
                 <button
-                    className="flex items-center gap-2 bg-[#10b981] text-white px-4 py-1.5 rounded-md text-xs font-bold hover:bg-[#059669]"
-                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-1.5 rounded-md text-xs font-bold transition-all"
+                    onClick={() => setIsCampaignOpen(true)}
+                >
+                    <span>📢</span> NEW CAMPAIGN
+                </button>
+
+                <button
+                    className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white px-4 py-1.5 rounded-md text-xs font-bold transition-all"
+                    onClick={() => setIsPrioritizerOpen(true)}
                 >
                     <span>⚡</span> PRIORITIZER
                 </button>
             </div>
-            <AddressPrioritizerModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+            <AddressPrioritizerModal isOpen={isPrioritizerOpen} onClose={() => setIsPrioritizerOpen(false)} />
+
+            <AddContactCampaignModal
+                isOpen={isCampaignOpen}
+                onClose={() => setIsCampaignOpen(false)}
+                onCampaignAdded={onCampaignAdded}
             />
         </div>
     );

@@ -1,5 +1,3 @@
-// app/dashboard/page.tsx
-
 'use client';
 
 import { useState } from 'react';
@@ -7,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useAlerts } from "@/app/hooks/hooks-useAlerts";
 import { useJobsites } from "@/app/hooks/hooks-useJobsites";
 import { SEVERITY_COLORS, COUNTY_COORDS } from "@/app/utils/utils-constants";
+import {JobsiteFormData} from "@/app/types/types-jobsite";
 
 const MapContainer = dynamic(() => import('@/app/components/dashboard/MapContainer').then(mod => ({ default: mod.MapContainer })), { ssr: false });
 const AlertZoneList = dynamic(() => import('@/app/components/dashboard/AlertZoneList').then(mod => ({ default: mod.AlertZoneList })), { ssr: false });
@@ -40,14 +39,35 @@ export default function DashboardPage() {
   const [showJobsites, setShowJobsites] = useState(true);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
 
+  // Función puente para transformar los datos de la IA al formato que espera tu hook useJobsites
+  const handleCampaignAddedFromFilterBar = (campaignData: { name: string; lat: number; lng: number; radiusKm: number }) => {
+    // Construimos el objeto con la estructura que el mapa y hook necesitan en runtime
+    const newCampaign = {
+      name: campaignData.name,
+      address: `${campaignData.lat}, ${campaignData.lng}`, // Guardamos la coordenada como fallback de dirección
+      lat: campaignData.lat,
+      lng: campaignData.lng,
+      radiusKm: campaignData.radiusKm,
+      channels: "AI_GENERATED",
+      active: true
+    };
+
+    // Usamos un as unknown as JobsiteFormData para saltar la validación de input estricta del formulario
+    addJobsite(newCampaign as unknown as JobsiteFormData);
+  };
+
   return (
       <div className="flex flex-col h-screen w-screen bg-[#06142e] text-slate-100 overflow-hidden">
 
         {/* HEADER */}
         <Header alertCount={alerts.length} lastUpdate={kpis.lastUpdate} />
 
-        {/* FILTER BAR */}
-        <FilterBar filters={filters} onFilterChange={updateFilter} />
+        {/* FILTER BAR - CONECTADO AL BOTÓN Y CON LA FUNCIÓN HANDLER */}
+        <FilterBar
+            filters={filters}
+            onFilterChange={updateFilter}
+            onCampaignAdded={handleCampaignAddedFromFilterBar}
+        />
 
         {/* MAIN CONTENT */}
         <div className="flex flex-1 overflow-hidden gap-0 min-h-0">
@@ -133,7 +153,6 @@ export default function DashboardPage() {
                   <div className="w-6 h-2 rounded" style={{ background: '#8b5cf6', opacity: 0.4 }} />
                   <span className="text-xs text-slate-300">Alert Zone Coverage</span>
                 </div>
-                {/* Jobsite legend entry — only show if any jobsites exist */}
                 {jobsites.length > 0 && (
                     <div className="flex items-center gap-2 mt-1 pt-1 border-t border-[#1e3a8a]">
                       <div className="w-3 h-3 rounded-full" style={{ background: '#10b981' }} />
@@ -250,7 +269,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* CAMPAIGN MODAL */}
+        {/* CAMPAIGN MODAL (MÉTODO CLÁSICO LADO IZQUIERDO) */}
         {showCampaignModal && (
             <CampaignModal
                 onClose={() => setShowCampaignModal(false)}
