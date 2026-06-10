@@ -337,7 +337,7 @@ export function MapContainer({
     });
   }, [alerts, countyCoords, severityColors, showCircles]);
 
-  // Render jobsite markers + circles
+  // Render jobsite markers + circles (Updated to Purple)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -353,8 +353,8 @@ export function MapContainer({
       try {
         const circle = L.circle([j.lat, j.lng], {
           radius: j.radiusKm * 1000,
-          color: '#10b981',
-          fillColor: '#10b981',
+          color: '#8b5cf6', // Cambiado a morado
+          fillColor: '#8b5cf6', // Cambiado a morado
           fillOpacity: 0.10,
           opacity: 0.55,
           weight: 1.5,
@@ -367,12 +367,12 @@ export function MapContainer({
         const icon = L.divIcon({
           className: '',
           html: `<div style="position:relative;width:22px;height:28px">
-            <svg viewBox="0 0 22 28" xmlns="http://www.w3.org/2000/svg" style="width:22px;height:28px;filter:drop-shadow(0 0 6px #10b98188)">
-              <path d="M11 0C6.48 0 2 4.03 2 9c0 6.75 9 17 9 17s9-10.25 9-17c0-4.97-4.03-9-9-9z" fill="#10b981"/>
-              <circle cx="11" cy="9" r="4" fill="#0d1420"/>
-              <circle cx="11" cy="9" r="2" fill="#10b981"/>
-            </svg>
-          </div>`,
+          <svg viewBox="0 0 22 28" xmlns="http://www.w3.org/2000/svg" style="width:22px;height:28px;filter:drop-shadow(0 0 6px #8b5cf688)">
+            <path d="M11 0C6.48 0 2 4.03 2 9c0 6.75 9 17 9 17s9-10.25 9-17c0-4.97-4.03-9-9-9z" fill="#8b5cf6"/>
+            <circle cx="11" cy="9" r="4" fill="#0d1420"/>
+            <circle cx="11" cy="9" r="2" fill="#8b5cf6"/>
+          </svg>
+        </div>`,
           iconSize: [22, 28],
           iconAnchor: [11, 28],
           popupAnchor: [0, -30],
@@ -380,20 +380,20 @@ export function MapContainer({
 
         const marker = L.marker([j.lat, j.lng], { icon }).addTo(map);
         marker.bindPopup(`
-          <div style="min-width:230px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
-            <div style="font-size:13px;font-weight:700;color:#10b981;margin-bottom:6px">📍 ${j.name}</div>
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">${j.address}</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;margin-bottom:8px">
-              <div style="color:#64748b">Campaign Radius</div>
-              <div style="color:#10b981;font-weight:700">${j.radiusKm} KM</div>
-              <div style="color:#64748b">Channels</div>
-              <div style="color:#38bdf8">${j.channels}</div>
-            </div>
-            <div style="padding-top:6px;border-top:1px solid #1e3a5f;font-size:10px;color:#10b981">
-              ✅ Active Jobsite Campaign Zone
-            </div>
+        <div style="min-width:230px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
+          <div style="font-size:13px;font-weight:700;color:#8b5cf6;margin-bottom:6px">📍 ${j.name}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:8px">${j.address}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;margin-bottom:8px">
+            <div style="color:#64748b">Campaign Radius</div>
+            <div style="color:#8b5cf6;font-weight:700">${j.radiusKm} KM</div>
+            <div style="color:#64748b">Channels</div>
+            <div style="color:#38bdf8">${j.channels}</div>
           </div>
-        `);
+          <div style="padding-top:6px;border-top:1px solid #1e3a5f;font-size:10px;color:#8b5cf6">
+            ✅ Active Jobsite Campaign Zone
+          </div>
+        </div>
+      `);
         jobsiteMarkersRef.current.push(marker);
       } catch {}
     });
