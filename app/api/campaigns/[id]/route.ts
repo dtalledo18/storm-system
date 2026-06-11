@@ -1,13 +1,14 @@
 // app/api/campaigns/[id]/route.ts
-import { NextResponse } from 'next/server';
 import { updateCampaignActiveState, deleteCampaignFromDb } from '@/app/services/services-campaignService';
+import { NextRequest, NextResponse } from 'next/server';
 
+// 💡 Solución: Declaramos explícitamente que 'params' es una Promesa en el tipado de TypeScript
 export async function PUT(
-    req: Request,
-    context: { params: { id: string } }
+    req: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        // Aseguramos la captura del ID desde los parámetros de la URL
+        // Ahora sí hace match perfecto el await con el tipo Promise de arriba
         const params = await context.params;
         const id = params.id;
 
@@ -35,9 +36,10 @@ export async function PUT(
     }
 }
 
+// 💡 Aplicamos exactamente el mismo cambio al método DELETE
 export async function DELETE(
-    req: Request,
-    context: { params: { id: string } }
+    req: NextRequest,
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const params = await context.params;
