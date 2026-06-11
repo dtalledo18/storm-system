@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Campaign" ADD COLUMN     "address" TEXT,
+ADD COLUMN     "channels" TEXT NOT NULL DEFAULT 'Ads + SMS',
+ALTER COLUMN "lat" DROP NOT NULL,
+ALTER COLUMN "lng" DROP NOT NULL;

@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useAlerts } from "@/app/hooks/hooks-useAlerts";
 import { useJobsites } from "@/app/hooks/hooks-useJobsites";
 import { SEVERITY_COLORS, COUNTY_COORDS } from "@/app/utils/utils-constants";
-import {JobsiteFormData} from "@/app/types/types-jobsite";
 
 const MapContainer = dynamic(() => import('@/app/components/dashboard/MapContainer').then(mod => ({ default: mod.MapContainer })), { ssr: false });
 const AlertZoneList = dynamic(() => import('@/app/components/dashboard/AlertZoneList').then(mod => ({ default: mod.AlertZoneList })), { ssr: false });
@@ -28,32 +27,64 @@ export default function DashboardPage() {
 
   const {
     jobsites,
-    loading: jobsiteLoading,
-    error: jobsiteError,
-    addJobsite,
     removeJobsite,
     toggleJobsite,
+    addJobsite,
   } = useJobsites();
 
   const [showCircles, setShowCircles] = useState(true);
   const [showJobsites, setShowJobsites] = useState(true);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const campaignsLoadedRef = useRef(false);
 
-  // Función puente para transformar los datos de la IA al formato que espera tu hook useJobsites
-  const handleCampaignAddedFromFilterBar = (campaignData: { name: string; lat: number; lng: number; radiusKm: number }) => {
-    // Construimos el objeto con la estructura que el mapa y hook necesitan en runtime
-    const newCampaign = {
-      name: campaignData.name,
-      address: `${campaignData.lat}, ${campaignData.lng}`, // Guardamos la coordenada como fallback de dirección
-      lat: campaignData.lat,
-      lng: campaignData.lng,
-      radiusKm: campaignData.radiusKm,
-      channels: "AI_GENERATED",
-      active: true
+  // Carga inicial desde Postgres (Single source of truth)
+  useEffect(() => {
+    if (campaignsLoadedRef.current) return;
+    campaignsLoadedRef.current = true;
+
+    const loadStoredCampaigns = async () => {
+      try {
+        const res = await fetch('/api/campaigns');
+        if (!res.ok) throw new Error("Error fetching baseline campaigns");
+
+        const storedCampaigns = await res.json();
+        console.log("[Campaigns] Fetched from DB:", storedCampaigns.length, storedCampaigns);
+
+        storedCampaigns.forEach((campaign: any) => {
+          const jobsite = {
+            id: campaign.id,
+            name: campaign.name,
+            address: campaign.address || `${campaign.lat}, ${campaign.lng}`,
+            radiusKm: campaign.radiusKm,
+            channels: campaign.channels || "SMS",
+            lat: campaign.lat,
+            lng: campaign.lng,
+            active: campaign.active
+          };
+          addJobsite(jobsite as any);
+        });
+      } catch (error) {
+        console.error("[Campaigns] Failed to load:", error);
+      }
     };
 
-    // Usamos un as unknown as JobsiteFormData para saltar la validación de input estricta del formulario
-    addJobsite(newCampaign as unknown as JobsiteFormData);
+    loadStoredCampaigns();
+  }, [addJobsite]);
+
+  // 💡 FUNCIÓN UNIFICADA NUEVA: Procesa cualquier campaña guardada por Postgres e inyecta al mapa en tiempo real
+  const handleCampaignAdded = (savedCampaign: any) => {
+    console.log("[Dashboard] Agregando campaña al mapa en tiempo real:", savedCampaign);
+
+    addJobsite({
+      id: savedCampaign.id, // Requerido por la validación del hook
+      name: savedCampaign.name,
+      address: savedCampaign.address || `${savedCampaign.lat}, ${savedCampaign.lng}`,
+      lat: parseFloat(savedCampaign.lat),
+      lng: parseFloat(savedCampaign.lng),
+      radiusKm: parseFloat(savedCampaign.radiusKm),
+      channels: savedCampaign.channels || "Ads + SMS",
+      active: savedCampaign.active ?? true
+    } as any);
   };
 
   return (
@@ -62,11 +93,11 @@ export default function DashboardPage() {
         {/* HEADER */}
         <Header alertCount={alerts.length} lastUpdate={kpis.lastUpdate} />
 
-        {/* FILTER BAR - CONECTADO AL BOTÓN Y CON LA FUNCIÓN HANDLER */}
+        {/* FILTER BAR - Ahora conectado a la función unificada */}
         <FilterBar
             filters={filters}
             onFilterChange={updateFilter}
-            onCampaignAdded={handleCampaignAddedFromFilterBar}
+            onCampaignAdded={handleCampaignAdded}
         />
 
         {/* MAIN CONTENT */}
@@ -74,8 +105,6 @@ export default function DashboardPage() {
 
           {/* LEFT PANEL */}
           <div className="w-60 bg-[#0a1b3a] border-r border-[#1e3a8a] overflow-y-auto p-3 flex-shrink-0">
-
-            {/* KPIs */}
             <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a]">
               Executive KPIs
             </div>
@@ -88,7 +117,6 @@ export default function DashboardPage() {
               <KPICard label="Last Update" value={kpis.lastUpdate} delta="API Sync" variant="gold" />
             </div>
 
-            {/* Alert Zones */}
             <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a]">
               Alert Zones
             </div>
@@ -98,7 +126,6 @@ export default function DashboardPage() {
                 severityColors={SEVERITY_COLORS}
             />
 
-            {/* Campaign Zones — spacer then panel */}
             <div className="mt-3">
               <JobsitePanel
                   jobsites={jobsites}
@@ -121,7 +148,6 @@ export default function DashboardPage() {
                 showJobsites={showJobsites}
             />
 
-            {/* BADGES SUPERPUESTOS */}
             <div className="absolute top-3 left-15 z-999 pointer-events-none">
               <div className="bg-[#0a1b3a] bg-opacity-90 border border-[#1e3a8a] rounded px-3 py-2 mb-2 pointer-events-auto backdrop-blur-sm">
                 <div className="text-xs uppercase tracking-widest text-slate-400 font-bold">Active Alerts</div>
@@ -133,7 +159,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* LEGEND - BOTTOM LEFT */}
             <div className="absolute bottom-5 left-3 z-999">
               <div className="bg-[#0a1b3a] bg-opacity-90 border border-[#1e3a8a] rounded-lg p-3 backdrop-blur-sm">
                 <div className="text-xs uppercase tracking-widest text-[#FFD700] font-bold mb-2">Alert Classification</div>
@@ -178,7 +203,6 @@ export default function DashboardPage() {
             <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a] mt-2.5">
               Strategic Recommendations
             </div>
-
             <div className="flex gap-2 mb-1.5 p-1.5 bg-[#0a1b3a] border border-[#1e3a8a] rounded border-l-4 border-l-cyan-500">
               <div className="text-xs text-slate-400">
                 <strong className="text-slate-200 block text-sm mb-0.5">Monitor Active Zones</strong>
@@ -198,7 +222,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Campaign Zones Summary */}
             {jobsites.length > 0 && (
                 <>
                   <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 pb-1.5 border-b border-[#1e3a8a] mt-2.5">
@@ -269,13 +292,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* CAMPAIGN MODAL (MÉTODO CLÁSICO LADO IZQUIERDO) */}
+        {/* CAMPAIGN MODAL (MÉTODO CLÁSICO LADO IZQUIERDO) - Conectado al nuevo handler */}
         {showCampaignModal && (
             <CampaignModal
+                isOpen={showCampaignModal}
                 onClose={() => setShowCampaignModal(false)}
-                onSubmit={addJobsite}
-                loading={jobsiteLoading}
-                error={jobsiteError}
+                onCampaignAdded={handleCampaignAdded}
             />
         )}
       </div>

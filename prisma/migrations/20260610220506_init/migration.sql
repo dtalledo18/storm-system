@@ -1,0 +1,12 @@
+-- CreateTable
+CREATE TABLE "Campaign" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "lat" DOUBLE PRECISION NOT NULL,
+    "lng" DOUBLE PRECISION NOT NULL,
+    "radiusKm" DOUBLE PRECISION NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Campaign_pkey" PRIMARY KEY ("id")
+);

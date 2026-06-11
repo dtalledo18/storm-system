@@ -276,7 +276,7 @@ export function MapContainer({
         }).join('');
 
         marker.bindPopup(`
-          <div style="min-width:280px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
+          <div style="min-width:250px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;">
             <div style="font-size:11px;color:#0ea5e9;font-weight:600;margin-bottom:4px">${zipData.address}</div>
             <div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><strong>County:</strong> ${county.name}</div>
             <div style="font-size:10px;color:#94a3b8;margin-bottom:8px"><strong>ZIP Codes:</strong> <span style="color:#38bdf8;font-weight:600">${zipData.zips}</span></div>
@@ -367,7 +367,7 @@ export function MapContainer({
         const icon = L.divIcon({
           className: '',
           html: `<div style="position:relative;width:22px;height:28px">
-          <svg viewBox="0 0 22 28" xmlns="http://www.w3.org/2000/svg" style="width:22px;height:28px;filter:drop-shadow(0 0 6px #8b5cf688)">
+          <svg viewBox="0 0 22 28" xmlns="http://www.w3.org/2000/svg" style="width:22px;height:28px;filter:drop-shadow(0 0 1px #8b5cf688)">
             <path d="M11 0C6.48 0 2 4.03 2 9c0 6.75 9 17 9 17s9-10.25 9-17c0-4.97-4.03-9-9-9z" fill="#8b5cf6"/>
             <circle cx="11" cy="9" r="4" fill="#0d1420"/>
             <circle cx="11" cy="9" r="2" fill="#8b5cf6"/>

@@ -5,16 +5,19 @@
 import { useState } from 'react';
 import { JobsiteFormData } from '@/app/types/types-jobsite';
 
+
 interface CampaignModalProps {
+    isOpen: boolean; // 👈 Asegurado
     onClose: () => void;
-    onSubmit: (data: JobsiteFormData) => Promise<boolean>;
-    loading: boolean;
-    error: string | null;
+    onCampaignAdded: (campaign: any) => void;
 }
 
 const CHANNEL_OPTIONS = ['Ads + SMS', 'Ads Only', 'SMS Only', 'Email + Ads', 'All Channels'];
 
-export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignModalProps) {
+export function CampaignModal({ isOpen, onClose, onCampaignAdded }: CampaignModalProps) {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
     const [form, setForm] = useState<JobsiteFormData>({
         name: '',
         address: '',
@@ -22,21 +25,59 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
         channels: 'Ads + SMS'
     });
 
+    if (!isOpen) return null;
+
     const handleChange = (field: keyof JobsiteFormData, value: string | number) => {
         setForm(prev => ({ ...prev, [field]: value }));
     };
 
     const handleSubmit = async () => {
         if (!form.name.trim() || !form.address.trim()) return;
-        const ok = await onSubmit(form);
-        if (ok) onClose();
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            // DISPARO A LA API: Enviamos la data del formulario (con dirección) para geocodificar y guardar
+            const res = await fetch('/api/campaigns', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: form.name,
+                    address: form.address,
+                    radiusKm: form.radiusKm,
+                    channels: form.channels
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || "Failed to process and save the campaign zone.");
+            }
+
+            const savedCampaign = await res.json();
+
+            // Seteamos el estado global para pintar el pin/círculo en el mapa de Leaflet
+            onCampaignAdded(savedCampaign);
+            onClose();
+
+        } catch (err: any) {
+            console.error("Error creating manual address campaign:", err);
+            setError(err.message || "An unexpected error occurred.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/30 bg-opacity-70 backdrop-blur-sm"
+                className={`absolute inset-0 bg-black/30 bg-opacity-70 backdrop-blur-sm ${
+                    loading ? 'pointer-events-none' : 'cursor-pointer'
+                }`}
                 onClick={onClose}
             />
 
@@ -49,8 +90,8 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
                             <span className="text-sm font-bold text-[#FFD700] uppercase tracking-widest">
-                New Campaign Zone
-              </span>
+                                New Campaign Zone
+                            </span>
                         </div>
                         <p className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wider">
                             Jobsite Radius Targeting
@@ -58,7 +99,8 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-slate-500 hover:text-white transition-colors text-lg leading-none"
+                        disabled={loading}
+                        className="text-slate-500 hover:text-white transition-colors text-lg leading-none disabled:opacity-30"
                     >
                         ✕
                     </button>
@@ -74,10 +116,11 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                         </label>
                         <input
                             type="text"
+                            disabled={loading}
                             value={form.name}
                             onChange={e => handleChange('name', e.target.value)}
                             placeholder="e.g. Jobsite – Oak Park"
-                            className="w-full bg-[#06142e] border border-[#1e3a8a] rounded px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-[#10b981] focus:outline-none transition-colors"
+                            className="w-full bg-[#06142e] border border-[#1e3a8a] rounded px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-[#10b981] focus:outline-none transition-colors disabled:opacity-50"
                         />
                     </div>
 
@@ -88,10 +131,11 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                         </label>
                         <input
                             type="text"
+                            disabled={loading}
                             value={form.address}
                             onChange={e => handleChange('address', e.target.value)}
                             placeholder="1205 Rossell Ave, Oak Park, IL"
-                            className="w-full bg-[#06142e] border border-[#1e3a8a] rounded px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-[#10b981] focus:outline-none transition-colors"
+                            className="w-full bg-[#06142e] border border-[#1e3a8a] rounded px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:border-[#10b981] focus:outline-none transition-colors disabled:opacity-50"
                         />
                         <p className="text-[9px] text-slate-600 mt-1">Full address for geocoding. Be as specific as possible.</p>
                     </div>
@@ -107,20 +151,22 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                                 min={0.5}
                                 max={10}
                                 step={0.5}
+                                disabled={loading}
                                 value={form.radiusKm}
                                 onChange={e => handleChange('radiusKm', parseFloat(e.target.value))}
-                                className="flex-1 accent-[#10b981] cursor-pointer"
+                                className="flex-1 accent-[#10b981] cursor-pointer disabled:opacity-50"
                             />
                             <div className="flex gap-1">
                                 {[1, 2, 5].map(km => (
                                     <button
                                         key={km}
+                                        disabled={loading}
                                         onClick={() => handleChange('radiusKm', km)}
                                         className={`px-2 py-1 text-[10px] rounded border transition-all ${
                                             form.radiusKm === km
                                                 ? 'border-[#10b981] text-[#10b981] bg-[#10b98115]'
                                                 : 'border-[#1e3a8a] text-slate-500 hover:border-[#10b981] hover:text-[#10b981]'
-                                        }`}
+                                        } disabled:opacity-30`}
                                     >
                                         {km}km
                                     </button>
@@ -138,12 +184,13 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                             {CHANNEL_OPTIONS.map(ch => (
                                 <button
                                     key={ch}
+                                    disabled={loading}
                                     onClick={() => handleChange('channels', ch)}
                                     className={`px-2.5 py-1 text-[10px] rounded border transition-all ${
                                         form.channels === ch
                                             ? 'border-[#38bdf8] text-[#38bdf8] bg-[#38bdf815]'
                                             : 'border-[#1e3a8a] text-slate-500 hover:border-[#38bdf8] hover:text-[#38bdf8]'
-                                    }`}
+                                    } disabled:opacity-30`}
                                 >
                                     {ch}
                                 </button>
@@ -163,7 +210,8 @@ export function CampaignModal({ onClose, onSubmit, loading, error }: CampaignMod
                 <div className="px-5 py-4 border-t border-[#1e3a8a] flex gap-2">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-2.5 text-xs font-bold uppercase tracking-widest border border-[#1e3a8a] text-slate-400 rounded hover:border-slate-500 hover:text-slate-300 transition-all"
+                        disabled={loading}
+                        className="flex-1 px-4 py-2.5 text-xs font-bold uppercase tracking-widest border border-[#1e3a8a] text-slate-400 rounded hover:border-slate-500 hover:text-slate-300 transition-all disabled:opacity-30"
                     >
                         Cancel
                     </button>

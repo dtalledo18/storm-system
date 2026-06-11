@@ -1,0 +1,19 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Campaign {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?  // ← agregar
+  lat       Float?   // ← opcional, se llena después del geocoding
+  lng       Float?   // ← opcional
+  radiusKm  Float
+  channels  String   @default("Ads + SMS")  // ← agregar
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
